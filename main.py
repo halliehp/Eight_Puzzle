@@ -1,9 +1,9 @@
 import numpy
 import heapq
-from queue import Queue
+from treelib import Node, Tree
 
 goal_state = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
-one_off = [[1, 2, 3], [4, 5, 6], [7, 0, 8]]
+depth_2 = [[1, 2, 3], [4, 5, 6], [0, 7, 8]]
 
 
 def print_puzzle(puzzle):
@@ -12,9 +12,18 @@ def print_puzzle(puzzle):
     print('\n')
 
 
-def general_search(problem):
+def expand_node(initial_node):
+    for j in range(len(initial_node)):
+        for i in range(len(initial_node[j])):
+            if initial_node[j][i] == 0:
+                print(j+1, i+1)
+
+
+def general_search(initial_problem):
     queue = []
-    heapq.heappush(queue, problem)
+    heapq.heappush(queue, initial_problem)
+    tree = Tree()
+    tree.create_node(initial_problem, 1)  # root node
     expanded_nodes = []
     expanded_nodes_count = 0
     max_queue_size = 0
@@ -31,6 +40,9 @@ def general_search(problem):
             return current_node
         else:
             expanded_nodes.append(current_node)
+            print('expanded nodes:')
+            print(expanded_nodes)
 
 
-general_search(goal_state)
+#general_search(depth_2)
+expand_node(depth_2)
