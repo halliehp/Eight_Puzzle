@@ -156,7 +156,7 @@ def general_search(initial_problem):
                     if temp3 not in expanded_nodes:
                         tree.create_node(temp3, tree_id, parent=parent_num)
                         tree_id += 1
-                        heapq.heappush(queue, temp3)
+                        queue.append(temp3)
             except:
                 print('tile cannot move right')
             try:
@@ -165,7 +165,8 @@ def general_search(initial_problem):
                     if temp4 not in expanded_nodes:
                         tree.create_node(temp4, tree_id, parent=parent_num)
                         tree_id += 1
-                        heapq.heappush(queue, temp4)
+                        # heapq.heappush(queue, temp4)
+                        queue.append(temp4)
             except:
                 print('tile cannot move left')
             try:
@@ -174,7 +175,8 @@ def general_search(initial_problem):
                     if temp not in expanded_nodes:
                         tree.create_node(temp, tree_id, parent=parent_num)
                         tree_id += 1
-                        heapq.heappush(queue, temp)
+                        # heapq.heappush(queue, temp)
+                        queue.append(temp)
             except:
                 print('tile cannot move down')
             try:
@@ -183,10 +185,11 @@ def general_search(initial_problem):
                     if temp2 not in expanded_nodes:
                         tree.create_node(temp2, tree_id, parent=parent_num)
                         tree_id += 1
-                        heapq.heappush(queue, temp2)
+                        # heapq.heappush(queue, temp2)
+                        queue.append(temp2)
             except:
                 print('tile cannot move up')
-
+            print(queue[0])
             expanded_nodes_count += 1
 
 
@@ -211,4 +214,4 @@ if yet_another == None:
 tree.show()
 print_puzzle(current_node)'''
 
-general_search(depth_1)
+general_search(depth_2)
