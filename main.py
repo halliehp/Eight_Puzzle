@@ -1,5 +1,5 @@
 import numpy
-import heapq
+from queue import Queue
 from treelib import Node, Tree
 import copy
 
@@ -15,10 +15,17 @@ depth_2 = [[1, 2, 3],
            [4, 5, 6],
            [0, 7, 8]]
 
-test = [[1, 2, 3],
-        [4, 0, 6],
-        [5, 7, 8]]
+depth_4 = [[1, 2, 3],
+           [5, 0, 6],
+           [4, 7, 8]]
 
+depth_8 = [[1, 3, 6],
+           [5, 0, 2],
+           [4, 7, 8]]
+
+test = [[1, 2, 4],
+        [3, 0, 6],
+        [7, 8, 5]]
 
 def print_puzzle(puzzle):
     for i in range(0, 3):
@@ -70,6 +77,15 @@ def tile_left(node, row, column):
     return new_node
 
 
+def misplaced_tile(node):
+    count = -1  # this is to account for the placeholder tile
+    for j in range(3):
+        for i in range(3):
+            if goal_state[j][i] != node[j][i]:
+                count += 1
+    return count
+
+
 def find_zero(initial_node):
     for j in range(len(initial_node)):
         for i in range(len(initial_node[j])):
@@ -77,49 +93,12 @@ def find_zero(initial_node):
                 return j, i
 
 
-def do_expansion(node):
-    '''try:
-        temp = tile_down(copy.deepcopy(curr_copy), j, i)
-        if temp is not None:
-            tree.create_node(temp, tree_id, parent=parent_num)
-            tree_id += 1
-            if temp not in queue:
-                heapq.heappush(queue, temp)
-    except:
-        print('tile cannot move down')
-    try:
-        temp2 = tile_up(copy.deepcopy(curr_copy), j, i)
-        if temp2 is not None:
-            tree.create_node(temp2, tree_id, parent=parent_num)
-            tree_id += 1
-            if temp2 not in queue:
-                heapq.heappush(queue, temp2)
-    except:
-                    print('tile cannot move up')'''
-    try:
-        temp3 = tile_right(copy.deepcopy(node), j, i)
-        if temp3 is not None:
-            if temp3 not in queue:
-                tree.create_node(temp3, tree_id, parent=parent_num)
-                tree_id += 1
-                heapq.heappush(queue, temp3)
-    except:
-        print('tile cannot move right')
-    '''try:
-        temp4 = tile_left(copy.deepcopy(curr_copy), j, i)
-        if temp4 is not None:
-            if temp4 not in queue:
-                tree.create_node(temp4, tree_id, parent=parent_num)
-                tree_id += 1
-                heapq.heappush(queue, temp4)
-    except:
-        print('tile cannot move left')'''
-
-
 def general_search(initial_problem):
-    queue = []
-    heapq.heapify(queue)
-    heapq.heappush(queue, initial_problem)
+    # queue = []
+    queue = Queue(maxsize=0)
+    # heapq.heapify(queue)
+    # heapq.heappush(queue, initial_problem)
+    queue.put(initial_problem)
     tree = Tree()
     parent_num = 0
     tree.create_node(initial_problem, 1)  # root node
@@ -128,9 +107,10 @@ def general_search(initial_problem):
     max_queue_size = 0
     tree_id = 2
 
-    while len(queue) > 0:
-        max_queue_size = max(len(queue), max_queue_size)
-        current_node = heapq.heappop(queue)
+    while queue.qsize() > 0:
+        max_queue_size = max(queue.qsize(), max_queue_size)
+        # current_node = heapq.heappop(queue)
+        current_node = queue.get()
         # print_puzzle(current_node)
         parent_num += 1
         if current_node == goal_state:
@@ -143,9 +123,13 @@ def general_search(initial_problem):
             print(expanded_nodes)
             print('expanded tree:')
             tree.show()
+            # print('depth of tree: ', tree.depth())
+            pls = tree.get_node(tree_id)
+            print('depth of tree: ', tree.depth(pls))
             return current_node
         else:
-            j, i = find_zero(current_node)[0], int(find_zero(current_node)[1])
+            zeroth = find_zero(current_node)
+            j, i = zeroth[0], zeroth[1]
             # print(j, i)
             expanded_nodes.append(current_node)  # about to expand the current node to append it to expanded nodes
             curr_copy = copy.deepcopy(current_node)  # deep copy current node
@@ -156,7 +140,7 @@ def general_search(initial_problem):
                     if temp3 not in expanded_nodes:
                         tree.create_node(temp3, tree_id, parent=parent_num)
                         tree_id += 1
-                        queue.append(temp3)
+                        queue.put(temp3)
             except:
                 print('tile cannot move right')
             try:
@@ -166,7 +150,7 @@ def general_search(initial_problem):
                         tree.create_node(temp4, tree_id, parent=parent_num)
                         tree_id += 1
                         # heapq.heappush(queue, temp4)
-                        queue.append(temp4)
+                        queue.put(temp4)
             except:
                 print('tile cannot move left')
             try:
@@ -176,7 +160,7 @@ def general_search(initial_problem):
                         tree.create_node(temp, tree_id, parent=parent_num)
                         tree_id += 1
                         # heapq.heappush(queue, temp)
-                        queue.append(temp)
+                        queue.put(temp)
             except:
                 print('tile cannot move down')
             try:
@@ -186,14 +170,17 @@ def general_search(initial_problem):
                         tree.create_node(temp2, tree_id, parent=parent_num)
                         tree_id += 1
                         # heapq.heappush(queue, temp2)
-                        queue.append(temp2)
+                        queue.put(temp2)
             except:
                 print('tile cannot move up')
-            print(queue[0])
+            #print(queue[0])
             expanded_nodes_count += 1
 
+    if queue.qsize() == 0:
+        print('Search failed. There is no solution to this puzzle!')
 
 # general_search(depth_2)
+
 '''current_node = copy.deepcopy(depth_2)
 print_puzzle(current_node)
 tree = Tree()
@@ -214,4 +201,6 @@ if yet_another == None:
 tree.show()
 print_puzzle(current_node)'''
 
-general_search(depth_2)
+# general_search(depth_4)
+
+print(misplaced_tile(depth_2))
