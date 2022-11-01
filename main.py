@@ -1,5 +1,4 @@
 import numpy
-import numpy as np
 from treelib import Node, Tree
 import copy
 import heapq
@@ -16,8 +15,8 @@ goal_state_coordinates = {1: [0, 0], 2: [0, 1], 3: [0, 2],
 
 class Board:
     def __init__(self, node: list[list[int]]):
-        self.node = node
-        self.children = []
+        self.node = node  # actual 2d array of puzzle
+        self.children = []  # list of children nodes expanded from this node
         self.depth = 0  # g(n)
         self.heuristic = 0  # h(n)
         self.cost = 0  # g(n) + h(n)
@@ -146,8 +145,8 @@ def expand_node(board: Board, tree: Tree, curr_tree_id):
         temp_child.tree_id = curr_tree_id
         children.append(temp_child)
         tree.create_node(current, curr_tree_id, parent=board.tree_id)
-    for x in children:
-        x.depth = board.depth + 1
+    for x in range(len(children)):
+        children[x].depth = board.depth + 1
     board.children = children
     return children, curr_tree_id
 
@@ -223,8 +222,8 @@ def general_search(algo, initial_board, tree_id):
         current_node = heapq.heappop(queue)
         curr = copy.deepcopy(current_node[1])
 
-        print('Best state to expand with g(x): ', curr.depth, ' and h(x): ', curr.heuristic)
-        print_puzzle(curr.node)
+        # print('Best state to expand with g(x): ', curr.depth, ' and h(x): ', curr.heuristic)
+        # print_puzzle(curr.node)
 
         if numpy.array_equal(curr.node, goal_state):
             print('Goal state reached!')
@@ -234,8 +233,9 @@ def general_search(algo, initial_board, tree_id):
             print('Depth of solution is: ', curr.depth)
             return curr.node
         else:
-            if str(current_node[1].node) not in expanded_nodes:
-                expanded_nodes.add(str(curr))
+            tempvar = current_node[1].node
+            if str(tempvar) not in expanded_nodes:
+                expanded_nodes.add(str(tempvar))
                 expanded = expand_node(curr, tree, tree_id)
                 expanded_nodes_count += 1
                 curr_depth = curr.depth
@@ -254,7 +254,7 @@ def main_menu():
                  '(2) for Misplaced Tile Heuristic \n'
                  '(3) for Manhattan Distance Heuristic \n')
     algo = int(algo)
-    general_search(algo, depth_8, tree_id)
+    general_search(algo, depth_16, tree_id)
 
 
 main_menu()
