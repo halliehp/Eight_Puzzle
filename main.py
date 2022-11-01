@@ -1,11 +1,16 @@
-import numpy
 from queue import Queue
 from treelib import Node, Tree
 import copy
+import heapq
 
 goal_state = [[1, 2, 3],
               [4, 5, 6],
               [7, 8, 0]]
+
+# coordinates are given in row, column
+goal_state_coordinates = {1: [0, 0], 2: [0, 1], 3: [0, 2],
+                          4: [1, 0], 5: [1, 1], 6: [1, 2],
+                          7: [2, 0], 8: [2, 1], 0: [2, 2]}
 
 depth_1 = [[1, 2, 3],
            [4, 5, 6],
@@ -22,6 +27,10 @@ depth_4 = [[1, 2, 3],
 depth_8 = [[1, 3, 6],
            [5, 0, 2],
            [4, 7, 8]]
+
+depth_16 = [[1, 6, 7],
+            [5, 0, 3],
+            [4, 8, 2]]
 
 test = [[1, 2, 4],
         [3, 0, 6],
@@ -77,13 +86,29 @@ def tile_left(node, row, column):
     return new_node
 
 
-def misplaced_tile(node):
+def misplaced_tile(node):  # resulting count is the g(n) for the misplaced tile heuristic
     count = -1  # this is to account for the placeholder tile
     for j in range(3):
         for i in range(3):
             if goal_state[j][i] != node[j][i]:
                 count += 1
     return count
+
+
+def manhattan_distance(node):  # the g(n) is the sum of the distance all misplaced tiles are from their goal spot
+    # dictionary with coordinates of the goal states is goal_state_coordinates
+    # create a dictionary with all current spots of the node that is passed in
+    # do the math aka find displacement of all the missing ones and then sum it
+    distance_sum = 0
+    for j in range(3):
+        for i in range(3):
+            gs = goal_state[j][i]
+            cn = node[j][i]
+            if cn != 0:
+                if gs != cn:
+                    dist = abs(j - goal_state_coordinates[cn][0]) + abs(i - goal_state_coordinates[cn][1])
+                    distance_sum += dist
+    return distance_sum
 
 
 def find_zero(initial_node):
@@ -115,14 +140,14 @@ def general_search(initial_problem):
         parent_num += 1
         if current_node == goal_state:
             print("Goal state reached!")
-            while len(expanded_nodes) > 0:
-                print_puzzle(expanded_nodes.pop())
-            print("Number of nodes expanded: ", expanded_nodes_count)
-            print("Max queue size: ", max_queue_size)
-            print('expanded nodes:')
-            print(expanded_nodes)
+            #while len(expanded_nodes) > 0:
+                #print_puzzle(expanded_nodes.pop())
             print('expanded tree:')
             tree.show()
+            print("Number of nodes expanded: ", expanded_nodes_count)
+            print("Max queue size: ", max_queue_size)
+            # print('expanded nodes:')
+            # print(expanded_nodes)
             # print('depth of tree: ', tree.depth())
             pls = tree.get_node(tree_id)
             print('depth of tree: ', tree.depth(pls))
@@ -201,6 +226,7 @@ if yet_another == None:
 tree.show()
 print_puzzle(current_node)'''
 
-# general_search(depth_4)
+# general_search(depth_16)
 
-print(misplaced_tile(depth_2))
+print('for misplaced tile g(n) =', misplaced_tile(test))
+print('for manhattan g(n) =', manhattan_distance(test))
