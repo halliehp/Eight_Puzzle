@@ -188,124 +188,24 @@ def expand_node(board: Board, tree: Tree, curr_tree_id):
     return tree, curr_tree_id
 
 
-def general_search(algo, initial_problem):
+def general_search(algo, initial_board, tree_id):
     queue = []
     heapq.heapify(queue)
-    heapq.heappush(queue, (initial_problem.cost, initial_problem.node))
-    # queue.put(initial_problem)
     tree = Tree()
-    parent_num = 0
-    tree.create_node(initial_problem.node, 1)  # root node
-    visited_nodes = []
-    expanded_nodes = []
-    expanded_nodes_count = 0
+    tree_id += 1
+    initial_board.tree_id = tree_id
+    tree.create_node(initial_board.node, tree_id)
+    heapq.heappush(queue, (initial_board.cost, initial_board))
     max_queue_size = 0
-    tree_id = 2
 
-    while len(queue) > 0:
+    while len(queue) >0:
         max_queue_size = max(len(queue), max_queue_size)
-        current_node_and = heapq.heappop(queue)
-        current_node = current_node_and[1]
-        current_cost = current_node_and[0]
-        # current_node = queue.get()
-        # print_puzzle(current_node)
-        parent_num += 1
-        if np.array_equal(current_node, goal_state):
-            print("Goal state reached!")
-            '''while len(expanded_nodes) > 0:
-                here = expanded_nodes.pop()
-                print_puzzle(here)'''
-
-            # print('expanded tree:')
-            # tree.show()
-            print("Number of nodes expanded: ", expanded_nodes_count)
-            print("Max queue size: ", max_queue_size)
-            # print('expanded nodes:')
-            # print(expanded_nodes)
-            # print('depth of tree: ', tree.depth())
-            # pls = tree.get_node(tree_id)
-            # print('depth of tree: ', tree.depth(pls))
-            print('depth of tree: ', tree.depth())
-            return current_node
-        else:
-            zeroth = find_zero(current_node)
-            j, i = zeroth[0], zeroth[1]
-            # print(j, i)
-            expanded_nodes.append(current_node)  # about to expand the current node to append it to expanded nodes
-            curr_copy = copy.deepcopy(current_node)  # deep copy current node
-            # logic to expand node here
-            try:
-                temp3 = tile_right(copy.deepcopy(curr_copy), j, i)
-                if temp3 is not None:
-                    if temp3 not in expanded_nodes:
-                        tree.create_node(temp3, tree_id, parent=parent_num)
-                        tree_id += 1
-                        # queue.put(temp3)
-                        temp_depth = tree.depth()
-                        if algo == 1:
-                            cost = temp_depth
-                        elif algo == 2:
-                            cost = temp_depth + misplaced_tile(temp3)
-                        elif algo == 3:
-                            cost = temp_depth + manhattan_distance(temp3)
-                        heapq.heappush(queue, (cost, temp3))
-            except:
-                print('tile cannot move right')
-            try:
-                temp4 = tile_left(copy.deepcopy(curr_copy), j, i)
-                if temp4 is not None:
-                    if temp4 not in expanded_nodes:
-                        tree.create_node(temp4, tree_id, parent=parent_num)
-                        tree_id += 1
-                        # heapq.heappush(queue, temp4)
-                        # queue.put(temp4)
-                        temp_depth = tree.depth()
-                        if algo == 1:
-                            cost = temp_depth
-                        elif algo == 2:
-                            cost = temp_depth + misplaced_tile(temp4)
-                        elif algo == 3:
-                            cost = temp_depth + manhattan_distance(temp4)
-                        heapq.heappush(queue, (cost, temp4))
-            except:
-                print('tile cannot move left')
-            try:
-                temp = tile_down(copy.deepcopy(curr_copy), j, i)
-                if temp is not None:
-                    if temp not in expanded_nodes:
-                        tree.create_node(temp, tree_id, parent=parent_num)
-                        tree_id += 1
-                        # heapq.heappush(queue, temp)
-                        # queue.put(temp)
-                        temp_depth = tree.depth()
-                        if algo == 1:
-                            cost = temp_depth
-                        elif algo == 2:
-                            cost = temp_depth + misplaced_tile(temp)
-                        elif algo == 3:
-                            cost = temp_depth + manhattan_distance(temp)
-                        heapq.heappush(queue, (cost, temp))
-            except:
-                print('tile cannot move down')
-            try:
-                temp2 = tile_up(copy.deepcopy(curr_copy), j, i)
-                if temp2 is not None:
-                    if temp2 not in expanded_nodes:
-                        tree.create_node(temp2, tree_id, parent=parent_num)
-                        tree_id += 1
-                        temp_depth = tree.depth()
-                        if algo == 1:
-                            cost = temp_depth
-                        elif algo == 2:
-                            cost = temp_depth + misplaced_tile(temp2)
-                        elif algo == 3:
-                            cost = temp_depth + manhattan_distance(temp2)
-                        heapq.heappush(queue, (cost, temp2))
-                        # queue.put(temp2)
-            except:
-                print('tile cannot move up')
-            # print(queue[0])
-            expanded_nodes_count += 1
+        current_node = heapq.heappop(queue)
+        node_now = expand_node(current_node[1], tree, tree_id)
+        # print(current_node[1].children[0].node)
+        tree_id += node_now[1]
+        tree.show()
+        print('tree depth is: ', tree.depth())
 
     if len(queue) == 0:
         print('Search failed. There is no solution to this puzzle!')
