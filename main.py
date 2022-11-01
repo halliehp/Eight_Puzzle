@@ -1,3 +1,4 @@
+import numpy
 import numpy as np
 from treelib import Node, Tree
 import copy
@@ -16,12 +17,18 @@ goal_state_coordinates = {1: [0, 0], 2: [0, 1], 3: [0, 2],
 class Board:
     def __init__(self, node: list[list[int]]):
         self.node = node
-        self.cost = 0
-        self.depth = 0
+        self.children = []
+        self.depth = 0  # g(n)
+        self.heuristic = 0  # h(n)
+        self.cost = 0  # g(n) + h(n)
+        self.tree_id = 0  # id of node on tree structure
 
     def __lt__(self, other):
         return self.cost < other.cost
 
+depth_0 = Board([[1, 2, 3],
+                 [4, 5, 6],
+                 [7, 8, 0]])
 
 depth_1 = Board([[1, 2, 3],
                  [4, 5, 6],
@@ -51,6 +58,8 @@ test = Board([[8, 6, 7],
               [2, 5, 4],
               [3, 0, 1]])
 
+tree_id = 0
+
 
 def print_puzzle(puzzle):
     for i in range(0, 3):
@@ -59,49 +68,88 @@ def print_puzzle(puzzle):
 
 
 def tile_up(node, row, column):  # given current puzzle and row and column of zero tile, swap tiles
-    if int(row-1) < 0:
+    if int(row - 1) < 0:
         return None
     new_node = copy.deepcopy(node)
     zero_tile = new_node[row][column]
-    tile_above = new_node[row-1][column]
+    tile_above = new_node[row - 1][column]
     new_node[row][column] = tile_above
-    new_node[row-1][column] = zero_tile
+    new_node[row - 1][column] = zero_tile
     return new_node
 
 
 def tile_down(node, row, column):
-    if int(row+1) > 2:
+    if int(row + 1) > 2:
         return None
     new_node = copy.deepcopy(node)
     zero_tile = new_node[row][column]
-    tile_below = new_node[row+1][column]
+    tile_below = new_node[row + 1][column]
     new_node[row][column] = tile_below
-    new_node[row+1][column] = zero_tile
+    new_node[row + 1][column] = zero_tile
     return new_node
 
 
 def tile_right(node, row, column):
-    if int(column+1) > 2:
+    if int(column + 1) > 2:
         return None
     new_node = copy.deepcopy(node)
     zero_tile = new_node[row][column]
-    tile_above = new_node[row][column+1]
+    tile_above = new_node[row][column + 1]
     new_node[row][column] = tile_above
-    new_node[row][column+1] = zero_tile
+    new_node[row][column + 1] = zero_tile
     return new_node
 
 
 def tile_left(node, row, column):
-    if int(column-1) < 0:
-        return None
     new_node = copy.deepcopy(node)
     zero_tile = new_node[row][column]
-    tile_above = new_node[row][column-1]
+    tile_above = new_node[row][column - 1]
     new_node[row][column] = tile_above
-    new_node[row][column-1] = zero_tile
+    new_node[row][column - 1] = zero_tile
     return new_node
 
 
+def expand_node(board: Board, tree: Tree, curr_tree_id):
+    puzzle = board.node
+    current = copy.deepcopy(puzzle)
+    zeroth = find_zero(current)
+    j, i = zeroth[0], zeroth[1]  # row = j, col - i
+    children = []
+    if int(j + 1) <= 2:
+        current = tile_down(current, j, i)
+        temp_child = Board(copy.deepcopy(current))
+        curr_tree_id += 1
+        temp_child.tree_id = curr_tree_id
+        children.append(temp_child)
+        tree.create_node(current, curr_tree_id, parent=board.tree_id)
+        current = copy.deepcopy(puzzle)
+    if int(j - 1) >= 0:
+        current = tile_up(current, j, i)
+        temp_child = Board(copy.deepcopy(current))
+        curr_tree_id += 1
+        temp_child.tree_id = curr_tree_id
+        children.append(temp_child)
+        tree.create_node(current, curr_tree_id, parent=board.tree_id)
+        current = copy.deepcopy(puzzle)
+    if int(i - 1) >= 0:
+        current = tile_left(current, j, i)
+        temp_child = Board(copy.deepcopy(current))
+        curr_tree_id += 1
+        temp_child.tree_id = curr_tree_id
+        children.append(temp_child)
+        tree.create_node(current, curr_tree_id, parent=board.tree_id)
+        current = copy.deepcopy(puzzle)
+    if int(i + 1) <= 2:
+        current = tile_right(current, j, i)
+        temp_child = Board(copy.deepcopy(current))
+        curr_tree_id += 1
+        temp_child.tree_id = curr_tree_id
+        children.append(temp_child)
+        tree.create_node(current, curr_tree_id, parent=board.tree_id)
+    for x in children:
+        x.depth = board.depth + 1
+    board.children = children
+    return children, curr_tree_id
 
 
 def misplaced_tile(node):  # resulting count is the g(n) for the misplaced tile heuristic
@@ -110,6 +158,8 @@ def misplaced_tile(node):  # resulting count is the g(n) for the misplaced tile 
         for i in range(3):
             if goal_state[j][i] != node[j][i]:
                 count += 1
+    if count < 0:
+        count = 0
     return count
 
 
@@ -135,61 +185,25 @@ def find_zero(initial_node):
                 return j, i
 
 
-def queuing_order(node, tree, parent_num, algo, tree_id, expanded_nodes, queue):
-    if node is not None:
-        if node not in expanded_nodes:
-            tree.create_node(node, tree_id, parent=parent_num)
-            tree_id += 1
-            temp_depth = tree.depth()
-            if algo == 1:
-                cost = temp_depth
-            elif algo == 2:
-                cost = temp_depth + misplaced_tile(node)
-            elif algo == 3:
-                cost = temp_depth + manhattan_distance(node)
-            heapq.heappush(queue, (cost, node))
+def queueing_order(algo, queue, nodes, depth):
+    for x in range(len(nodes)):
+        if algo == 1:
+            heuristic = 0
+        elif algo == 2:
+            heuristic = misplaced_tile(nodes[x].node)
+            nodes[x].heuristic = heuristic
+        elif algo == 3:
+            heuristic = manhattan_distance(nodes[x].node)
+            nodes[x].heuristic = heuristic
+        cost = depth + heuristic
+        nodes[x].cost = cost
+        heapq.heappush(queue, (cost, nodes[x]))
     return queue
-
-
-def expand_node(board: Board, tree: Tree, curr_tree_id):
-    puzzle = board.node
-    current = copy.deepcopy(puzzle)
-    zeroth = find_zero(current)
-    j, i = zeroth[0], zeroth[1]  # row = j, col - i
-    children = []
-    if int(j + 1) <= 2:
-        current = tile_down(current, j, i)
-        temp_child = Board(copy.deepcopy(current))
-        children.append(temp_child)
-        curr_tree_id += 1
-        tree.create_node(current, curr_tree_id, parent=board.tree_id)
-        current = copy.deepcopy(puzzle)
-    if int(j - 1) >= 0:
-        current = tile_up(current, j, i)
-        temp_child = Board(copy.deepcopy(current))
-        children.append(temp_child)
-        curr_tree_id += 1
-        tree.create_node(current, curr_tree_id, parent=board.tree_id)
-        current = copy.deepcopy(puzzle)
-    if int(i - 1) >= 0:
-        current = tile_left(current, j, i)
-        temp_child = Board(copy.deepcopy(current))
-        children.append(temp_child)
-        curr_tree_id += 1
-        tree.create_node(current, curr_tree_id, parent=board.tree_id)
-        current = copy.deepcopy(puzzle)
-    if int(i + 1) <= 2:
-        current = tile_right(current, j, i)
-        temp_child = Board(copy.deepcopy(current))
-        children.append(temp_child)
-        curr_tree_id += 1
-        tree.create_node(current, curr_tree_id, parent=board.tree_id)
-    board.children = children
-    return tree, curr_tree_id
 
 
 def general_search(algo, initial_board, tree_id):
     queue = []
+    expanded_nodes = []
     heapq.heapify(queue)
     tree = Tree()
     tree_id += 1
@@ -197,15 +211,32 @@ def general_search(algo, initial_board, tree_id):
     tree.create_node(initial_board.node, tree_id)
     heapq.heappush(queue, (initial_board.cost, initial_board))
     max_queue_size = 0
+    expanded_nodes_count = 0
 
-    while len(queue) >0:
+    while len(queue) > 0:
         max_queue_size = max(len(queue), max_queue_size)
         current_node = heapq.heappop(queue)
-        node_now = expand_node(current_node[1], tree, tree_id)
-        # print(current_node[1].children[0].node)
-        tree_id += node_now[1]
-        tree.show()
-        print('tree depth is: ', tree.depth())
+        curr = copy.deepcopy(current_node[1])
+
+        print('Best state to expand with g(x): ', curr.depth, ' and h(x): ', curr.heuristic)
+        print_puzzle(curr.node)
+
+        if numpy.array_equal(curr.node, goal_state):
+            print('Goal state reached!')
+            tree.show()
+            print('Number of nodes expanded: ', expanded_nodes_count)
+            print('Max queue size: ', max_queue_size)
+            print('Depth of solution is: ', curr.depth)
+            return curr.node
+        else:
+            if current_node[1].node not in expanded_nodes:
+                expanded_nodes.append(curr)
+                expanded = expand_node(curr, tree, tree_id)
+                expanded_nodes_count += 1
+                curr_depth = curr.depth
+                queue = queueing_order(algo, queue, curr.children, curr_depth)
+                # print(current_node[1].children[0].node)
+                tree_id += expanded[1]
 
     if len(queue) == 0:
         print('Search failed. There is no solution to this puzzle!')
@@ -218,10 +249,7 @@ def main_menu():
                  '(2) for Misplaced Tile Heuristic \n'
                  '(3) for Manhattan Distance Heuristic \n')
     algo = int(algo)
-    general_search(algo, depth_4)
+    general_search(algo, depth_8, tree_id)
 
 
 main_menu()
-
-# print('for misplaced tile g(n) =', misplaced_tile(test.node))
-# print('for manhattan g(n) =', manhattan_distance(test.node))
