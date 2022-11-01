@@ -185,28 +185,33 @@ def find_zero(initial_node):
                 return j, i
 
 
-def queueing_order(algo, queue, nodes, depth):
+def queueing_order(algo, queue, nodes, depth, already_expanded):
     for x in range(len(nodes)):
-        if algo == 1:
-            heuristic = 0
-        elif algo == 2:
-            heuristic = misplaced_tile(nodes[x].node)
-            nodes[x].heuristic = heuristic
-        elif algo == 3:
-            heuristic = manhattan_distance(nodes[x].node)
-            nodes[x].heuristic = heuristic
-        cost = depth + heuristic
-        nodes[x].cost = cost
-        heapq.heappush(queue, (cost, nodes[x]))
+        if str(nodes[x].node) not in already_expanded:
+            if algo == 1:
+                heuristic = 0
+            elif algo == 2:
+                heuristic = misplaced_tile(nodes[x].node)
+                nodes[x].heuristic = heuristic
+            elif algo == 3:
+                heuristic = manhattan_distance(nodes[x].node)
+                nodes[x].heuristic = heuristic
+            cost = depth + heuristic
+            nodes[x].cost = cost
+            heapq.heappush(queue, (cost, nodes[x]))
     return queue
 
 
 def general_search(algo, initial_board, tree_id):
     queue = []
-    expanded_nodes = []
+    expanded_nodes = set()
     heapq.heapify(queue)
     tree = Tree()
     tree_id += 1
+    if algo == 2:
+        initial_board.heuristic = misplaced_tile(initial_board.node)
+    elif algo == 3:
+        initial_board.heuristic = manhattan_distance(initial_board.node)
     initial_board.tree_id = tree_id
     tree.create_node(initial_board.node, tree_id)
     heapq.heappush(queue, (initial_board.cost, initial_board))
@@ -229,12 +234,12 @@ def general_search(algo, initial_board, tree_id):
             print('Depth of solution is: ', curr.depth)
             return curr.node
         else:
-            if current_node[1].node not in expanded_nodes:
-                expanded_nodes.append(curr)
+            if str(current_node[1].node) not in expanded_nodes:
+                expanded_nodes.add(str(curr))
                 expanded = expand_node(curr, tree, tree_id)
                 expanded_nodes_count += 1
                 curr_depth = curr.depth
-                queue = queueing_order(algo, queue, curr.children, curr_depth)
+                queue = queueing_order(algo, queue, curr.children, curr_depth, expanded_nodes)
                 # print(current_node[1].children[0].node)
                 tree_id += expanded[1]
 
