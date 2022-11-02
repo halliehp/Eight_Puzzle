@@ -2,6 +2,7 @@ import numpy
 from treelib import Node, Tree
 import copy
 import heapq
+import time
 
 goal_state = [[1, 2, 3],
               [4, 5, 6],
@@ -286,7 +287,11 @@ def main_menu():
                  '(2) for Misplaced Tile Heuristic \n'
                  '(3) for Manhattan Distance Heuristic \n')
     algo = int(algo)
+    start = time.time()
     general_search(algo, puzzle, tree_id)
-
+    end = time.time()
+    elapsed = end - start
+    print('time elapsed: ', elapsed)
 
 main_menu()
+
