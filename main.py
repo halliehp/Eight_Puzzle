@@ -184,27 +184,27 @@ def find_zero(initial_node):
                 return j, i
 
 
-def queueing_order(algo, queue, nodes, depth, already_expanded):
-    for x in range(len(nodes)):
-        if str(nodes[x].node) not in already_expanded:
+def queueing_order(algo, nodes, childs, depth, already_expanded):
+    for x in range(len(childs)):
+        if str(childs[x].node) not in already_expanded:
             if algo == 1:
                 heuristic = 0
             elif algo == 2:
-                heuristic = misplaced_tile(nodes[x].node)
-                nodes[x].heuristic = heuristic
+                heuristic = misplaced_tile(childs[x].node)
+                childs[x].heuristic = heuristic
             elif algo == 3:
-                heuristic = manhattan_distance(nodes[x].node)
-                nodes[x].heuristic = heuristic
+                heuristic = manhattan_distance(childs[x].node)
+                childs[x].heuristic = heuristic
             cost = depth + heuristic
-            nodes[x].cost = cost
-            heapq.heappush(queue, (cost, nodes[x]))
-    return queue
+            childs[x].cost = cost
+            heapq.heappush(nodes, (cost,childs[x]))
+    return nodes
 
 
 def general_search(algo, initial_board, tree_id):
-    queue = []
+    nodes = []
     expanded_nodes = set()
-    heapq.heapify(queue)
+    heapq.heapify(nodes)
     tree = Tree()
     tree_id += 1
     if algo == 2:
@@ -213,13 +213,13 @@ def general_search(algo, initial_board, tree_id):
         initial_board.heuristic = manhattan_distance(initial_board.node)
     initial_board.tree_id = tree_id
     tree.create_node(initial_board.node, tree_id)
-    heapq.heappush(queue, (initial_board.cost, initial_board))
+    heapq.heappush(nodes, (initial_board.cost, initial_board))
     max_queue_size = 0
     expanded_nodes_count = 0
 
-    while len(queue) > 0:
-        max_queue_size = max(len(queue), max_queue_size)
-        current_node = heapq.heappop(queue)
+    while len(nodes) > 0:
+        max_queue_size = max(len(nodes), max_queue_size)
+        current_node = heapq.heappop(nodes)
         curr = copy.deepcopy(current_node[1])
 
         print('Best state to expand with g(x): ', curr.depth, ' and h(x): ', curr.heuristic)
@@ -239,11 +239,11 @@ def general_search(algo, initial_board, tree_id):
                 expanded = expand_node(curr, tree, tree_id)
                 expanded_nodes_count += 1
                 curr_depth = curr.depth
-                queue = queueing_order(algo, queue, curr.children, curr_depth, expanded_nodes)
+                nodes = queueing_order(algo, nodes, curr.children, curr_depth, expanded_nodes)
                 # print(current_node[1].children[0].node)
                 tree_id += expanded[1]
 
-    if len(queue) == 0:
+    if len(nodes) == 0:
         print('Search failed. There is no solution to this puzzle!')
 
 
