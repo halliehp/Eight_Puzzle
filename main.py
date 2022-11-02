@@ -37,7 +37,7 @@ depth_2 = Board([[1, 2, 3],
                  [4, 5, 6],
                  [0, 7, 8]])
 
-depth_4 = Board([[1, 2, 3],
+depth_4 = Board([[1, 2, 3],  # easy default puzzle
                  [5, 0, 6],
                  [4, 7, 8]])
 
@@ -45,17 +45,17 @@ depth_8 = Board([[1, 3, 6],
                  [5, 0, 2],
                  [4, 7, 8]])
 
-depth_16 = Board([[1, 6, 7],
+depth_16 = Board([[1, 6, 7],  # medium default puzzle
                   [5, 0, 3],
                   [4, 8, 2]])
 
-depth_12 = Board([[1, 3, 6],
-                  [5, 0, 7],
-                  [4, 8, 2]])
+depth_24 = Board([[0, 7, 2],  # hard default puzzle
+                  [4, 6, 1],
+                  [3, 5, 8]])
 
-test = Board([[8, 6, 7],
-              [2, 5, 4],
-              [3, 0, 1]])
+depth_31 = Board([[8, 6, 7],
+                  [2, 5, 4],
+                  [3, 0, 1]])
 
 tree_id = 0
 
@@ -222,12 +222,12 @@ def general_search(algo, initial_board, tree_id):
         current_node = heapq.heappop(queue)
         curr = copy.deepcopy(current_node[1])
 
-        # print('Best state to expand with g(x): ', curr.depth, ' and h(x): ', curr.heuristic)
-        # print_puzzle(curr.node)
+        print('Best state to expand with g(x): ', curr.depth, ' and h(x): ', curr.heuristic)
+        print_puzzle(curr.node)
 
         if numpy.array_equal(curr.node, goal_state):
             print('Goal state reached!')
-            tree.show()
+            # tree.show()
             print('Number of nodes expanded: ', expanded_nodes_count)
             print('Max queue size: ', max_queue_size)
             print('Depth of solution is: ', curr.depth)
@@ -249,12 +249,44 @@ def general_search(algo, initial_board, tree_id):
 
 def main_menu():
     print('Welcome to 8 Puzzle Solver!')
+    puzzle_type = input('Select (1) to try a default puzzle or (2) to input your own. \n')
+    puzzle_type = int(puzzle_type)
+    if puzzle_type == 1:
+        the_puzzle = input('Select your default puzzle level. \n'
+                     '(1) for Easy \n'
+                     '(2) for Medium \n'
+                     '(3) for Hard \n')
+        the_puzzle = int(the_puzzle)
+        if the_puzzle == 1:
+            puzzle = depth_4
+        elif the_puzzle == 2:
+            puzzle = depth_16
+        elif the_puzzle == 3:
+            puzzle = depth_24
+    elif puzzle_type == 2:
+        custom = []
+        the_puzzle = input('Input the first row with spaces between each number \n')
+        puzzle = the_puzzle.split(" ")
+        x = [int(puzzle[0]), int(puzzle[1]), int(puzzle[2])]
+        custom.append(x)
+        the_puzzle = input('Input the second row with spaces between each number \n')
+        puzzle = the_puzzle.split(" ")
+        x = [int(puzzle[0]), int(puzzle[1]), int(puzzle[2])]
+        custom.append(x)
+        the_puzzle = input('Input the third row with spaces between each number \n')
+        puzzle = the_puzzle.split(" ")
+        x = [int(puzzle[0]), int(puzzle[1]), int(puzzle[2])]
+        custom.append(x)
+        print('Here\'s the initial state:')
+        print_puzzle(custom)
+        puzzle = Board(custom)
+
     algo = input('Select your algorithm. \n'
                  '(1) for Uniform Cost \n'
                  '(2) for Misplaced Tile Heuristic \n'
                  '(3) for Manhattan Distance Heuristic \n')
     algo = int(algo)
-    general_search(algo, depth_16, tree_id)
+    general_search(algo, puzzle, tree_id)
 
 
 main_menu()
