@@ -14,7 +14,7 @@ goal_state_coordinates = {1: [0, 0], 2: [0, 1], 3: [0, 2],
                           7: [2, 0], 8: [2, 1], 0: [2, 2]}
 
 
-class Board:
+class Board:  # creating class so that nodes can be more easily associated with their heuristic costs, etc.
     def __init__(self, node: list[list[int]]):
         self.node = node  # actual 2d array of puzzle
         self.children = []  # list of children nodes expanded from this node
@@ -26,9 +26,6 @@ class Board:
     def __lt__(self, other):
         return self.cost < other.cost
 
-depth_0 = Board([[1, 2, 3],
-                 [4, 5, 6],
-                 [7, 8, 0]])
 
 depth_1 = Board([[1, 2, 3],
                  [4, 5, 6],
@@ -58,10 +55,10 @@ depth_31 = Board([[8, 6, 7],
                   [2, 5, 4],
                   [3, 0, 1]])
 
-tree_id = 0
+tree_id = 0  # id to generate new nodes in treelib
 
 
-def print_puzzle(puzzle):
+def print_puzzle(puzzle):  # prints out puzzle in rows
     for i in range(0, 3):
         print(puzzle[i])
     print('\n')
@@ -109,20 +106,20 @@ def tile_left(node, row, column):
     return new_node
 
 
-def expand_node(board: Board, tree: Tree, curr_tree_id):
+def expand_node(board: Board, tree: Tree, curr_tree_id):  # combining all operations
     puzzle = board.node
-    current = copy.deepcopy(puzzle)
-    zeroth = find_zero(current)
-    j, i = zeroth[0], zeroth[1]  # row = j, col - i
-    children = []
-    if int(j + 1) <= 2:
-        current = tile_down(current, j, i)
-        temp_child = Board(copy.deepcopy(current))
+    current = copy.deepcopy(puzzle)  # current puzzle board
+    zeroth = find_zero(current)  # where zero is on the board
+    j, i = zeroth[0], zeroth[1]  # row = j, column = i
+    children = []  # initialize list for expanded nodes
+    if int(j + 1) <= 2:  # check if move is legal
+        current = tile_down(current, j, i)  # if it is, move tile down
+        temp_child = Board(copy.deepcopy(current))  # store new child board
         curr_tree_id += 1
         temp_child.tree_id = curr_tree_id
-        children.append(temp_child)
-        tree.create_node(current, curr_tree_id, parent=board.tree_id)
-        current = copy.deepcopy(puzzle)
+        children.append(temp_child)  # append new child board to list
+        tree.create_node(current, curr_tree_id, parent=board.tree_id)  # create node in tree with parent of current
+        current = copy.deepcopy(puzzle)  # make sure current is the parent node, not the new node
     if int(j - 1) >= 0:
         current = tile_up(current, j, i)
         temp_child = Board(copy.deepcopy(current))
@@ -146,19 +143,19 @@ def expand_node(board: Board, tree: Tree, curr_tree_id):
         temp_child.tree_id = curr_tree_id
         children.append(temp_child)
         tree.create_node(current, curr_tree_id, parent=board.tree_id)
-    for x in range(len(children)):
+    for x in range(len(children)):  # iterate through list of children and assign depths
         children[x].depth = board.depth + 1
-    board.children = children
-    return children, curr_tree_id
+    board.children = children  # assign the list of children to the parent node's class object
+    return children, curr_tree_id  # return list of children and the id
 
 
 def misplaced_tile(node):  # resulting count is the g(n) for the misplaced tile heuristic
     count = -1  # this is to account for the placeholder tile
     for j in range(3):
         for i in range(3):
-            if goal_state[j][i] != node[j][i]:
-                count += 1
-    if count < 0:
+            if goal_state[j][i] != node[j][i]:  # if the tile of the node passed in is not goal state
+                count += 1  # increase the count by 1 by definition of this heuristic
+    if count < 0:  # to account for the placeholder tile
         count = 0
     return count
 
@@ -169,25 +166,25 @@ def manhattan_distance(node):  # the g(n) is the sum of the distance all misplac
     distance_sum = 0
     for j in range(3):
         for i in range(3):
-            gs = goal_state[j][i]
-            cn = node[j][i]
+            gs = goal_state[j][i]  # goal state coordinate
+            cn = node[j][i]  # current node coordinate
             if cn != 0:
                 if gs != cn:
                     dist = abs(j - goal_state_coordinates[cn][0]) + abs(i - goal_state_coordinates[cn][1])
-                    distance_sum += dist
+                    distance_sum += dist  # take distance and add to sum
     return distance_sum
 
 
-def find_zero(initial_node):
+def find_zero(initial_node):  # searches through 2d array to find 0 or the empty tile
     for j in range(len(initial_node)):
         for i in range(len(initial_node[j])):
-            if initial_node[j][i] == 0:  # find where the empty tile is
-                return j, i
+            if initial_node[j][i] == 0:
+                return j, i  # returns the row and column of the zero tile
 
 
-def queueing_order(algo, nodes, childs, depth, already_expanded):
+def queueing_order(algo, nodes, childs, depth, already_expanded):  # queues the nodes via heuristic
     for x in range(len(childs)):
-        if str(childs[x].node) not in already_expanded:
+        if str(childs[x].node) not in already_expanded:  # checks for repeat state
             if algo == 1:
                 heuristic = 0
             elif algo == 2:
@@ -196,37 +193,38 @@ def queueing_order(algo, nodes, childs, depth, already_expanded):
             elif algo == 3:
                 heuristic = manhattan_distance(childs[x].node)
                 childs[x].heuristic = heuristic
-            cost = depth + heuristic
-            childs[x].cost = cost
-            heapq.heappush(nodes, (cost,childs[x]))
+            cost = depth + heuristic  # cost of a node is the depth + the heuristic of chosen algorithm
+            childs[x].cost = cost  # assign cost to the class object
+            heapq.heappush(nodes, (cost, childs[x]))  # push a tuple onto the heap so that it is automatically ordered
+            # tuples with a lower cost will be pushed to the top and will then be popped / expanded first
     return nodes
 
 
 def general_search(algo, initial_board, tree_id):
-    nodes = []
-    expanded_nodes = set()
+    nodes = []  # current working queue
+    expanded_nodes = set()  # set to account for repeated state
     heapq.heapify(nodes)
     tree = Tree()
     tree_id += 1
-    if algo == 2:
+    if algo == 2:  # to make sure that heuristic is printed for first node in traceback
         initial_board.heuristic = misplaced_tile(initial_board.node)
     elif algo == 3:
         initial_board.heuristic = manhattan_distance(initial_board.node)
     initial_board.tree_id = tree_id
-    tree.create_node(initial_board.node, tree_id)
-    heapq.heappush(nodes, (initial_board.cost, initial_board))
+    tree.create_node(initial_board.node, tree_id)  # create tree root node
+    heapq.heappush(nodes, (initial_board.cost, initial_board))  # push initial node onto heap with cost = 0
     max_queue_size = 0
     expanded_nodes_count = 0
 
-    while len(nodes) > 0:
+    while len(nodes) > 0:  # while there are still nodes in the working queue
         max_queue_size = max(len(nodes), max_queue_size)
-        current_node = heapq.heappop(nodes)
+        current_node = heapq.heappop(nodes)  # pop the node of least cost off the heap
         curr = copy.deepcopy(current_node[1])
 
         print('Best state to expand with g(x): ', curr.depth, ' and h(x): ', curr.heuristic)
         print_puzzle(curr.node)
 
-        if numpy.array_equal(curr.node, goal_state):
+        if numpy.array_equal(curr.node, goal_state):  # check if it is the goal state, if it's not
             print('Goal state reached!')
             # tree.show()
             print('Number of nodes expanded: ', expanded_nodes_count)
@@ -235,20 +233,20 @@ def general_search(algo, initial_board, tree_id):
             return curr.node
         else:
             tempvar = current_node[1].node
-            if str(tempvar) not in expanded_nodes:
-                expanded_nodes.add(str(tempvar))
-                expanded = expand_node(curr, tree, tree_id)
+            if str(tempvar) not in expanded_nodes:  # check if node is already expanded
+                expanded_nodes.add(str(tempvar))  # converting array to string to add to set so it is hashable
+                expanded = expand_node(curr, tree, tree_id)  # if it's not, expand it and add to set
                 expanded_nodes_count += 1
                 curr_depth = curr.depth
                 nodes = queueing_order(algo, nodes, curr.children, curr_depth, expanded_nodes)
                 # print(current_node[1].children[0].node)
                 tree_id += expanded[1]
 
-    if len(nodes) == 0:
+    if len(nodes) == 0:  # if all states are searched and no goal state was reached there is no solution
         print('Search failed. There is no solution to this puzzle!')
 
 
-def main_menu():
+def main_menu():  # interface
     print('Welcome to 8 Puzzle Solver!')
     puzzle_type = input('Select (1) to try a default puzzle or (2) to input your own. \n')
     puzzle_type = int(puzzle_type)
@@ -293,5 +291,5 @@ def main_menu():
     elapsed = end - start
     print('time elapsed: ', elapsed)
 
-main_menu()
 
+main_menu()
